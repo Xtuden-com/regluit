@@ -36,7 +36,7 @@ LOCALITY="Montclair";
 ORGNAME="Gluejar, Inc.";
 ORGUNIT="";
 CNAME=$HOSTNAME;
-EMAIL="eric@gluejar.com";
+EMAIL="eric@ebookfoundation.org";
 PASSWORD="";
 OPTION_COMPANY_NAME="";
 

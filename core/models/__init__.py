@@ -186,7 +186,7 @@ def notify_claim(sender, created, instance, **kwargs):
     if 'example.org' in instance.user.email or hasattr(instance, 'dont_notify'):
         return
     try:
-        (rights, new_rights) = User.objects.get_or_create(email='rights@gluejar.com', defaults={'username':'RightsatUnglueit'})
+        (rights, new_rights) = User.objects.get_or_create(email='rights@ebookfoundation.org', defaults={'username':'RightsatUnglueit'})
     except:
         rights = None
     if instance.user == instance.rights_holder.owner:

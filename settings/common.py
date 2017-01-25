@@ -236,7 +236,7 @@ LOGGING = {
 EMAIL_HOST = 'smtp.gluejar.com'
 DEFAULT_FROM_EMAIL = 'notices@gluejar.com'
 SERVER_EMAIL = 'notices@gluejar.com'
-SUPPORT_EMAIL = 'support@gluejar.com'
+SUPPORT_EMAIL = 'support@ebookfoundation.org'
 ACCOUNT_ACTIVATION_DAYS = 30
 SESSION_COOKIE_AGE = 3628800 # 6 weeks
 

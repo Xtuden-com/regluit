@@ -6,7 +6,7 @@ import regluit.core.isbn
 from django.conf import settings
 
 def gluejar_search(q, user_ip='69.243.24.29', page=1):
-    """normalizes results from the google books search suitable for gluejar
+    """normalizes results from the google books search suitable for unglue.it
     """
     results = []
     search_result=googlebooks_search(q, user_ip, page)

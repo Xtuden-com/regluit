@@ -2824,7 +2824,7 @@ def ask_rh(request, campaign_id):
             redirect_url = reverse('work', args=[campaign.work.id]),
             extra_context={'campaign':campaign, 'subject':campaign })
 
-def feedback(request, recipient='support@gluejar.com', template='feedback.html', message_template='feedback.txt', extra_context=None, redirect_url=None):
+def feedback(request, recipient='support@ebookfoundation.org', template='feedback.html', message_template='feedback.txt', extra_context=None, redirect_url=None):
     context = extra_context or {}
     context['num1'] = randint(0, 10)
     context['num2'] = randint(0, 10)
