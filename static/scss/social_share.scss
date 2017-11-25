@@ -1,4 +1,4 @@
-@import "variables.less";
+@import "variables.scss";
 @mixin shareclass($sharewhere)
 {
 	background:url("${image-base}icons/${sharewhere}.png") 10px center no-repeat;
