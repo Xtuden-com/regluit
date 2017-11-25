@@ -17,7 +17,7 @@
   background-image: none; // Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214
   border: 1px solid transparent;
   white-space: nowrap;
-  @include button-size($padding-base-vertical; $padding-base-horizontal; $font-size-base; $line-height-base; $border-radius-base);
+  @include button-size($padding-base-vertical, $padding-base-horizontal, $font-size-base, $line-height-base, $border-radius-base);
   @include user-select(none);
 
   &,
@@ -45,15 +45,15 @@
 
   &.disabled,
   &[disabled],
-  fieldset[disabled] & {
+  fieldset[disabled]  {
     cursor: $cursor-disabled;
     @include opacity(.65);
     @include box-shadow(none);
   }
 
-  a& {
+  a {
     &.disabled,
-    fieldset[disabled] & {
+    fieldset[disabled]  {
       pointer-events: none; // Future-proof disabling of clicks on `<a>` elements
     }
   }
@@ -64,26 +64,26 @@
 // --------------------------------------------------
 
 .btn-default {
-  @include button-variant($btn-default-color; $btn-default-bg; $btn-default-border);
+  @include button-variant($btn-default-color, $btn-default-bg, $btn-default-border);
 }
 .btn-primary {
-  @include button-variant($btn-primary-color; $btn-primary-bg; $btn-primary-border);
+  @include button-variant($btn-primary-color, $btn-primary-bg, $btn-primary-border);
 }
 // Success appears as green
 .btn-success {
-  @include button-variant($btn-success-color; $btn-success-bg; $btn-success-border);
+  @include button-variant($btn-success-color, $btn-success-bg, $btn-success-border);
 }
 // Info appears as blue-green
 .btn-info {
-  @include button-variant($btn-info-color; $btn-info-bg; $btn-info-border);
+  @include button-variant($btn-info-color, $btn-info-bg, $btn-info-border);
 }
 // Warning appears as orange
 .btn-warning {
-  @include button-variant($btn-warning-color; $btn-warning-bg; $btn-warning-border);
+  @include button-variant($btn-warning-color, $btn-warning-bg, $btn-warning-border);
 }
 // Danger and error appear as red
 .btn-danger {
-  @include button-variant($btn-danger-color; $btn-danger-bg; $btn-danger-border);
+  @include button-variant($btn-danger-color, $btn-danger-bg, $btn-danger-border);
 }
 
 
@@ -100,7 +100,7 @@
   &:active,
   &.active,
   &[disabled],
-  fieldset[disabled] & {
+  fieldset[disabled]  {
     background-color: transparent;
     @include box-shadow(none);
   }
@@ -117,7 +117,7 @@
     background-color: transparent;
   }
   &[disabled],
-  fieldset[disabled] & {
+  fieldset[disabled]  {
     &:hover,
     &:focus {
       color: $btn-link-disabled-color;
