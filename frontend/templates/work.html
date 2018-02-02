@@ -30,58 +30,55 @@
 {% endif %}
 {% endblock %}
 
-{% block extra_js %}
-<script type="text/javascript" src="{{ jquery_ui_home }}"></script>
-<script type="text/javascript" src="/static/js/wishlist.js"></script>
-<script type="text/javascript" src="/static/js/tabs4.js"></script>
-<script type="text/javascript" src="/static/js/widgets.js"></script>
-<script type="text/javascript" src="/static/js/counter.js"></script>
-<script type="text/javascript" src="/static/js/embed.js"></script>
-{% if user.is_staff or user in work.last_campaign.managers.all %}
-    {{ kwform.media.js }}
-{% endif %}
-
-<!-- needed for DeGruyter seed description hack
-     makes template vars accessible in JS
--->
-<script type="text/javascript">
-    var numWishers = {{ wishers }};
-    
-    {% if request.user.id in work.last_campaign.supporters %}
-    var isSupporter = true;
-    {% else %}
-    var isSupporter = false;
-    {% endif %}
-</script>
-
-{% endblock %}
-
-{% block topsection %}
-{% if work.last_campaign.status == 'ACTIVE' %}
-    {% if request.user in work.last_campaign.managers.all %}
-        <div class="launch_top pale">Hi, {{ request.user.username }}. Since you're a manager for this campaign, you can <a href="{% url 'manage_campaign' id=work.last_campaign.id %}">edit this campaign</a>.</div>
-    {% endif %}
-{% elif not work.user_with_rights %}
-    {% if request.user.rights_holder.all %}
-        <div class="launch_top pale">Hi, {{ request.user.username }}. Since you're an authorized Unglue.it rights holder, if you own the worldwide electronic rights to this work, you may claim it through the More... tab. Need help?  Check out the <a href="{% url 'rightsholders' %}">rights holder tools page</a>.</div>            
-    {% endif %}
-{% elif request.user == work.user_with_rights %}
-    {% if work.last_campaign.status != 'SUCCESSFUL' %}
-        <div class="launch_top pale">Hi, {{ request.user.username }}. Since you're a rights holder for this work, you can <a href="{% url 'rightsholders' %}">launch a campaign</a>.</div>
-    {% endif %}
-{% endif %}
-{% endblock %}
-
-{% block content %}  
-{% purchased %}
-{% lib_acqs %}
-{% with work.last_campaign_status as status %} 
+{% block content %}
 {% with work.id as work_id %}
-    <div id="main-container" itemscope itemtype="http://schema.org/Book">
-        <div class="js-main">
-            <div id="js-leftcol">
-                {% include "explore.html" %}
+    <div class="wrapper">
+        <div class="bookImage">
+            {% if work.uses_google_cover %}
+                <a href="{{ work.googlebooks_url }}">
+                    <img src="{{ work.cover_image_thumbnail }}" alt="Find {{ work.title }} at Google Books" title="Find {{ work.title }} at Google Books" width="131" height="192" />
+                </a>
+            {% else %}
+                <img itemprop="image" src="{{ work.cover_image_thumbnail }}" alt="{{ work.title }}" title="{{ work.title }}" width="131" height="192" />
+            {% endif %}
+        </div>
+        <div class="bookDescription">
+            <div class="pubinfo">
+                <h2 class="book-name" itemprop="name">{{ work.title }}</h2>
+                <h3 class="book-author">
+                    <span  itemprop="author">
+                        <a href="{% url 'search' %}?q={{ work.relators.0.author.name|urlencode }}&amp;ty=au" />
+                            {{ work.relators.0.name }}
+                        </a>
+                    </span>
+                    {% if work.authors.count == 2 %}
+                    and <span  itemprop="author"><a href="{% url 'search' %}?q={{ work.relators.1.author.name|urlencode }}&amp;ty=au" />{{ work.relators.1.name }}</a></span>
+                {% endif %}{% if work.relators.count > 2 %}{% for author in work.relators %}{% if not forloop.first %}, <span  itemprop="author"><a href="{% url 'search' %}?q={{ author.author.name|urlencode }}&amp;ty=au" />{{ author.name }}</a></span>{% endif %}{% endfor %}
+                {% endif %}
+                </h3>
+                <h3 class="book-year">
+                    {% if work.last_campaign.publisher %}
+                    <span itemprop="publisher"><a href="{% url 'bypubname_list' work.last_campaign.publisher.name.id %}">{{ work.last_campaign.publisher }}</a></span>
+                    {% endif %}
+                    <span itemprop="datePublished">{{ work.publication_date }}</span>
+                    <meta itemprop="inLanguage" content="work.language" />
+                    <meta itemprop="typicalAgeRange" content="work.age_range" />
+                </h3>
             </div>
+            <div  itemprop="description">
+            {% if status == 'ACTIVE'  %}
+                {% if work.last_campaign.type != 3 %}
+                    {{ work.last_campaign.description|safe }}
+                {% else %}
+                    {{ work.description|safe }}
+                {% endif %}
+            {% elif  work.description %}
+                {{ work.description|safe }}
+            {% else %}
+                {{ work.last_campaign.description|safe }}
+            {% endif %}
+            </div>
+<<<<<<< HEAD
             <div id="js-maincol">
                 <div class="js-maincol-inner">
                     <div id="content-block">
@@ -251,26 +248,25 @@
                                     {% endif %}
                                 </div>
                             </div>
+=======
+        </div>
+        <div class="bookSidebar">
+            <div class="book-sidebar-item">
+                <div class="btn_wishlist" id="wishlist_actions">
+                    {% if request.user.is_anonymous %}
+                        <div class="create-account">
+                            <span title="{% url 'work' work_id %}">Login to Fave</span>
+>>>>>>> foundationworkpage
                         </div>
-                        {% get_comment_count for work as comment_count %}
-                        {% if action == 'editions' %}
-                        <div class="content-block-heading" id="tabs">
-                            <ul class="tabs">
-                                <li class="tabs1"><a href="{% url 'work' work.id %}?tab=1">{% if status == 'ACTIVE' %}Campaign{% else %}Description{% endif %}</a></li>
-                                <li class="tabs2"><a href="{% url 'work' work.id %}?tab=2">Comments {% if comment_count > 0 %}({{ comment_count }}){% endif %}</a></li>
-                                <li class="tabs3" id="supporters"><a href="{% url 'work' work.id %}?tab=3">Ungluers {% if wishers > 0 %}<br />({{ wishers }}){% endif %}</a></li>
-                                <li class="tabs4 active"><a href="#">Editions</a></li>
-                            </ul>
+                    {% elif request.user.id in work.last_campaign.supporters %}
+                        <div class="add-wishlist">
+                            <span class="on-wishlist">Faved!</span>
                         </div>
-                        {% else %}
-                        <div class="content-block-heading" id="tabs">
-                            <ul class="tabs">
-                                <li class="tabs1 {% if activetab == '1' %}active{% endif %}"><a href="#">{% if status == 'ACTIVE' %}Campaign{% else %}Description{% endif %}</a></li>
-                                <li class="tabs2 {% if activetab == '2' %}active{% endif %}"><a href="#">Comments {% if comment_count > 0 %}({{ comment_count }}){% endif %}</a></li>
-                                <li class="tabs3 {% if activetab == '3' %}active{% endif %}" id="supporters"><a href="#">Ungluers {% if wishers > 0 %}<br />({{ wishers }}){% endif %}</a></li>
-                                <li class="tabs4 {% if activetab == '4' %}active{% endif %}"><a href="#">More...</a></li>
-                            </ul>
+                    {% elif work in request.user.wishlist.works.all %}
+                        <div class="remove-wishlist-workpage">
+                            <span id="w{{ work_id }}">Remove from My Faves</span>
                         </div>
+<<<<<<< HEAD
                         {% endif %}
                         <div id="content-block-content">
                             <div id="tabs-1" class="tabs {% if activetab == '1' %}active{% endif %}">
@@ -529,15 +525,39 @@
                                     
                                 </div>
                             </div>
+=======
+                    {% else %}
+                        <div class="add-wishlist">
+                            <span class="work_id" id="w{{ work_id }}">Add to My Faves</span>
+>>>>>>> foundationworkpage
                         </div>
-                    </div>    
+                    {% endif %}
                 </div>
             </div>
-            <div id="js-rightcol">
-            {% include 'work_action.html' %}
+            <div class="book-sidebar-item">
+                <a rel="nofollow" class="find-goodreads" href="{% url 'work_goodreads' work_id %}"><img src="/static/images/supporter_icons/goodreads_square.png" title="Find on GoodReads"  alt="Find on GoodReads" /></a>
+                <span>GoodReads</span>
             </div>
+            <div class="book-sidebar-item">
+                <a rel="nofollow" class="find-librarything" href="{% url 'work_librarything' work_id %}"><img src="/static/images/supporter_icons/librarything_square.png" title="Find on LibraryThing" alt="Find on LibraryThing" /></a>
+                <span>LibraryThing</span>
+            </div>
+            <div class="bookDownload">
+                <button class="button expanded">Download</button>
+            </div>
+            <div class="bookDonate">
+                <button class="button expanded">Donate</button>
+            </div>
+        </div>
+        <div class="bookComments">
+            <h2>Comments</h2>
+            {% render_comment_list for work %}
+            {% if user.is_authenticated %}
+                {% render_comment_form for work %}
+            {% else %}
+            <p>You must be <a href="{% url 'superlogin' %}?next={{ request.get_full_path|urlencode }}">logged in</a> to comment.</p>
+            {% endif %}
         </div>
     </div>
 {% endwith %}
-{% endwith %} 
 {% endblock %}

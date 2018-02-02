@@ -1,0 +1,9 @@
+@import 'settings/settings';
+@import 'foundation';
+@include foundation-everything;
+
+@include breakpoint(small only) {
+    #feedback {
+        display: none;
+    }
+}
