@@ -116,33 +116,18 @@
 	    overflow: visible;
 
         /* looks better if we start the gradient a little closer to the success color */
-<<<<<<< HEAD:static/scss/book_detail.scss
         $greener-than-alert: #CF6944;
-        
+
         background: -webkit-gradient(linear, left top, right top, from($call-to-action), to($greener-than-alert));
         background: -webkit-linear-gradient(left, $greener-than-alert, $call-to-action);
         background: -moz-linear-gradient(left, $greener-than-alert, $call-to-action);
         background: -ms-linear-gradient(left, $greener-than-alert, $call-to-action);
         background: -o-linear-gradient(left, $greener-than-alert, $call-to-action);
         background: linear-gradient(left, $greener-than-alert, $call-to-action);
-    
-        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$alert', endColorstr='$call-to-action'); /* IE6 & IE7 */  
-        -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='$alert', endColorstr='$call-to-action')"; /* IE8+ */  	    
-	    
-=======
-        @greener-than-alert: #CF6944;
 
-        background: -webkit-gradient(linear, left top, right top, from(@call-to-action), to(@greener-than-alert));
-        background: -webkit-linear-gradient(left, @greener-than-alert, @call-to-action);
-        background: -moz-linear-gradient(left, @greener-than-alert, @call-to-action);
-        background: -ms-linear-gradient(left, @greener-than-alert, @call-to-action);
-        background: -o-linear-gradient(left, @greener-than-alert, @call-to-action);
-        background: linear-gradient(left, @greener-than-alert, @call-to-action);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$alert', endColorstr='$call-to-action'); /* IE6 & IE7 */
+        -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='$alert', endColorstr='$call-to-action')"; /* IE8+ */
 
-        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='@alert', endColorstr='@call-to-action'); /* IE6 & IE7 */
-        -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='@alert', endColorstr='@call-to-action')"; /* IE8+ */
-
->>>>>>> foundationworkpage:static/less/book_detail.less
 	    &.successful {
 	        border-color: $bright-blue;
 	        background: $pale-blue;
