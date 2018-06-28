@@ -78,7 +78,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': join('/var/log/regluit', 'unglue.it.log'),
-            'maxBytes': 1024*1024*5, # 5 MB
+            'maxBytes': 1024 * 5, # 5 kB
             'backupCount': 5,
             'formatter': 'brief',
         },
