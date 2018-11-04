@@ -909,10 +909,9 @@ class BasePandataLoader(object):
                     if work and id.work and id.work_id is not work.id:
                         # dangerous! merge newer into older
                         if work.id < id.work_id:
-                            merge_works(work, id.work)
+                            work = merge_works(work, id.work)
                         else:
-                            merge_works(id.work, work)
-                            work = id.work
+                            work = merge_works(id.work, work)
                     else:
                         work = id.work
                     if id.edition and not edition:
@@ -986,6 +985,7 @@ class BasePandataLoader(object):
 
     def load_ebooks(self, metadata, edition, test_mode=False, user=None):
         default_edition = edition
+        license = cc.license_from_cc_url(metadata.rights_url)
         for key in ['epub', 'pdf', 'mobi']:
             url = metadata.metadata.get('download_url_{}'.format(key), None)
             if url:
@@ -995,7 +995,6 @@ class BasePandataLoader(object):
                     if contentfile:
                         contentfile_name = '/loaded/ebook_{}.{}'.format(edition.id, key)
                         path = default_storage.save(contentfile_name, contentfile)
-                        license = cc.license_from_cc_url(metadata.rights_url)
                         ebf = models.EbookFile.objects.create(
                             format=key,
                             edition=edition,
@@ -1104,7 +1103,7 @@ def ebooks_in_github_release(repo_owner, repo_name, tag, token=None):
     release = release_from_tag(repo, tag)
 
     return [(EBOOK_FORMATS.get(asset.content_type), asset.name)
-            for asset in release.iter_assets()
+            for asset in release.assets()
             if EBOOK_FORMATS.get(asset.content_type) is not None]
 
 def add_from_bookdatas(bookdatas):

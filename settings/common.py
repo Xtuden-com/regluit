@@ -7,6 +7,9 @@ from os.path import dirname, realpath, join
 import regluit
 from regluit.payment.parameters import PAYMENT_HOST_PAYPAL, PAYMENT_HOST_AMAZON
 
+from regluit.utils import custom_logging
+import logging.handlers
+logging.handlers.GroupWriteRotatingFileHandler = custom_logging.GroupWriteRotatingFileHandler
 
 PROJECT_DIR = dirname(dirname(realpath(__file__)))
 
@@ -41,7 +44,8 @@ MEDIA_URL = '/media/'
 
 # set once instead of in all the templates
 JQUERY_HOME = "/static/js/jquery-1.12.4.min.js"
-JQUERY_UI_HOME = "/static/js/jquery-ui-1.8.16.custom.min.js"
+JQUERY_UI_HOME = "/static/js/jquery-ui-1.11.4.min.js"
+JQUERY_UI_THEME = "/static/css/ui-lightness/jquery-ui-1.11.4.min.css"
 
 CKEDITOR_UPLOAD_PATH = ''
 CKEDITOR_RESTRICT_BY_USER = True
@@ -124,13 +128,12 @@ TEMPLATES = [
 ]
 
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'maintenancemode.middleware.MaintenanceModeMiddleware',
     'regluit.libraryauth.auth.SocialAuthExceptionMiddlewareWithoutMessages',
     'django.middleware.locale.LocaleMiddleware',
     'questionnaire.request_cache.RequestCacheMiddleware',
@@ -140,7 +143,7 @@ ROOT_URLCONF = 'regluit.urls'
 
 INSTALLED_APPS = (
     'django.contrib.auth',
-    'django.contrib.contenttypes',
+    'django.contrib.contenttypes',  
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.sitemaps',
@@ -157,7 +160,7 @@ INSTALLED_APPS = (
     'regluit.payment',
     'regluit.utils',
     'registration',
-    'social.apps.django_app.default',
+    'social_django',
     'tastypie',
     'djcelery',
     'el_pagination',
@@ -166,42 +169,38 @@ INSTALLED_APPS = (
     'notification',
     'email_change',
     'ckeditor',
-    'storages',
+    'ckeditor_uploader',
+    'storages', 
     'sorl.thumbnail',
-    'mptt',
-    # this must appear *after* django.frontend or else it overrides the
+    'mptt',   
+    # this must appear *after* django.frontend or else it overrides the 
     # registration templates in frontend/templates/registration
     'django.contrib.admin',
-    'regluit.distro',
+    'regluit.distro',               
     'regluit.booxtream',
     'regluit.pyepub',
-    'regluit.libraryauth',
+    'regluit.libraryauth', 
     'transmeta',
     'questionnaire',
-    'questionnaire.page',
+    'questionnaire.page',  
     'sass_processor',
 )
 
 SASS_PROCESSOR_INCLUDE_DIRS = [
     os.path.join(PROJECT_DIR, 'static', 'scss'),
-    os.path.join('static', 'scss'),
-    os.path.join(PROJECT_DIR, 'static', 'scss', 'foundation', 'scss'),
-    os.path.join('static', 'scss', 'foundation', 'scss'),
-    # static/scss/foundation/scss/foundation.scss
 ]
 SASS_PROCESSOR_AUTO_INCLUDE = False
 
-# A sample logging configuration. The only tangible logging
-# performed by this configuration is to send an email to
-# the site admins on every HTTP 500 error.
-# See http://docs.djangoproject.com/en/dev/topics/logging for
-# more details on how to customize your logging configuration.
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
     'formatters': {
         'brief': {
             'format': '%(asctime)s %(levelname)s %(name)s[%(funcName)s]: %(message)s',
+        },
+        'django.server': {
+            '()': 'django.utils.log.ServerFormatter',
+            'format': '[%(server_time)s] %(message)s',
         },
     },
     'filters': {
@@ -217,11 +216,16 @@ LOGGING = {
         },
         'file': {
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.GroupWriteRotatingFileHandler',
             'filename': join(PROJECT_DIR, 'logs', 'unglue.it.log'),
             'maxBytes': 1024*1024*5, # 5 MB
             'backupCount': 5,
             'formatter': 'brief',
+        },
+        'django.server': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'django.server',
         },
     },
     'loggers': {
@@ -230,10 +234,15 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        'django.server': {
+            'handlers': ['django.server'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         '': {
             'handlers': ['file'],
             'level': 'INFO',
-        }
+        },
     }
 }
 
@@ -247,72 +256,74 @@ SESSION_COOKIE_AGE = 3628800 # 6 weeks
 
 # django-socialauth
 AUTHENTICATION_BACKENDS = (
-    'social.backends.google.GoogleOAuth2',
-    'social.backends.twitter.TwitterOAuth',
-    'social.backends.yahoo.YahooOpenId',
-    'social.backends.facebook.FacebookOAuth2',
-    'social.backends.open_id.OpenIdAuth',
+    'social_core.backends.google.GoogleOAuth2',
+    'social_core.backends.twitter.TwitterOAuth',
+    'social_core.backends.yahoo.YahooOpenId',
+    'social_core.backends.facebook.FacebookOAuth2',
+    'social_core.backends.open_id.OpenIdAuth',
     'django.contrib.auth.backends.ModelBackend',
 )
 
 SOCIAL_AUTH_ENABLED_BACKENDS = ['google', 'facebook', 'twitter']
 #SOCIAL_AUTH_ASSOCIATE_BY_MAIL = True
 SOCIAL_AUTH_NEW_USER_REDIRECT_URL = '/'
-FACEBOOK_SOCIAL_AUTH_BACKEND_ERROR_URL = '/'
 SOCIAL_AUTH_SLUGIFY_USERNAMES = True
 SOCIAL_AUTH_NONCE_SERVER_URL_LENGTH = 200
 SOCIAL_AUTH_ASSOCIATION_SERVER_URL_LENGTH = 135
 SOCIAL_AUTH_ASSOCIATION_HANDLE_LENGTH = 125
+SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {'fields': 'picture'}
+SOCIAL_AUTH_FACEBOOK_LOGIN_ERROR_URL = '/'
+SOCIAL_AUTH_TWITTER_LOGIN_ERROR_URL = '/'
 
 SOCIAL_AUTH_PIPELINE = (
     # Get the information we can about the user and return it in a simple
     # format to create the user instance later. On some cases the details are
     # already part of the auth response from the provider, but sometimes this
     # could hit a provider API.
-    'social.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_details',
 
     # Get the social uid from whichever service we're authing thru. The uid is
     # the unique identifier of the given user in the provider.
-    'social.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_uid',
 
     # Verifies that the current auth process is valid within the current
     # project, this is were emails and domains whitelists are applied (if
     # defined).
-    'social.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.auth_allowed',
 
     # Checks if the current social-account is already associated in the site.
     'regluit.libraryauth.auth.selective_social_user',
 
     # Make up a username for this person, appends a random string at the end if
     # there's any collision.
-    'social.pipeline.user.get_username',
-
+    'social_core.pipeline.user.get_username',
+    
     # make username < 222 in length
     'regluit.libraryauth.auth.chop_username',
-
+    
     # Send a validation email to the user to verify its email address.
     # Disabled by default.
-    # 'social.pipeline.mail.mail_validation',
-
+    # 'social_core.pipeline.mail.mail_validation',
+    
     # Associates the current social details with another user account with
     # a similar email address. don't use twitter or facebook to log in
     'regluit.libraryauth.auth.selectively_associate_by_email',
 
     # Create a user account if we haven't found one yet.
-    'social.pipeline.user.create_user',
+    'social_core.pipeline.user.create_user',
 
     # Create the record that associated the social account with this user.
-    'social.pipeline.social_auth.associate_user',
-
+    'social_core.pipeline.social_auth.associate_user',
+    
     # Populate the extra_data field in the social record with the values
     # specified by settings (and the default ones like access_token, etc).
-    'social.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.social_auth.load_extra_data',
 
     # add extra data to user profile
     'regluit.libraryauth.auth.deliver_extra_data',
 
     # Update the user record with any changed info from the auth service.
-    'social.pipeline.user.user_details'
+    'social_core.pipeline.user.user_details'
 )
 
 SOCIAL_AUTH_TWITTER_EXTRA_DATA = [('profile_image_url_https', 'profile_image_url_https'),('screen_name','screen_name')]
@@ -324,7 +335,7 @@ LOGIN_ERROR_URL    = '/accounts/login-error/'
 
 USER_AGENT = "unglue.it.bot v0.0.1 <https://unglue.it>"
 
-# The amount of the transaction that Gluejar takes
+# The amount of the transaction that Gluejar takes 
 GLUEJAR_COMMISSION = 0.06
 PREAPPROVAL_PERIOD = 365 # days to ask for in a preapproval
 PREAPPROVAL_PERIOD_AFTER_CAMPAIGN = 90 # if we ask for preapproval time after a campaign deadline
@@ -372,7 +383,7 @@ UPDATE_ACTIVE_CAMPAIGN_STATUSES = {
 EBOOK_NOTIFICATIONS_JOB = {
     "task": "regluit.core.tasks.report_new_ebooks",
     "schedule": crontab(hour=0, minute=30),
-    "args": ()
+    "args": ()    
 }
 
 NOTIFY_ENDING_SOON_JOB = {
@@ -396,13 +407,13 @@ UPDATE_ACCOUNT_STATUSES = {
 NOTIFY_EXPIRING_ACCOUNTS = {
     "task": "regluit.payment.tasks.notify_expiring_accounts",
     "schedule": crontab(day_of_month=22, hour=0, minute=30),
-    "args": ()
+    "args": ()    
 }
 
 NOTIFY_UNCLAIMED_GIFTS = {
     "task": "regluit.core.tasks.notify_unclaimed_gifts",
     "schedule": crontab( hour=2, minute=15),
-    "args": ()
+    "args": ()    
 }
 
 # by default, in common, we don't turn any of the celerybeat jobs on -- turn them on in the local settings file
@@ -413,18 +424,11 @@ NOTIFICATION_QUEUE_ALL = True
 PAYMENT_PROCESSOR = 'stripelib'
 
 
-# by default, we are not in maintenance mode -- set True in overriding settings files for maintenance mode
-# http://pypi.python.org/pypi/django-maintenancemode/
-MAINTENANCE_MODE = False
-# Sequence of URL path regexes to exclude from the maintenance mode.
-MAINTENANCE_IGNORE_URLS = {}
-
-
 # we should suppress Google Analytics outside of production
 SHOW_GOOGLE_ANALYTICS = False
 
 # to enable uploading to S3 and integration of django-storages + django-ckeditor
-# some variables to be overriddden in more specific settings files -- e.g., prod.py,
+# some variables to be overriddden in more specific settings files -- e.g., prod.py, 
 CKEDITOR_ALLOW_NONIMAGE_FILES = False
 
 AWS_ACCESS_KEY_ID = ''
@@ -494,4 +498,5 @@ except ImportError:
 if AWS_SECRET_ACCESS_KEY:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 else:
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage' 
+

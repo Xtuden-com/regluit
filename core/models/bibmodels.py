@@ -16,7 +16,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.files.base import ContentFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from django.db.models import F
 from django.db.models.signals import post_save, pre_delete
@@ -67,8 +67,8 @@ class Identifier(models.Model):
     # olib, ltwk, goog, gdrd, thng, isbn, oclc, olwk, doab, gtbg, glue, doi
     type = models.CharField(max_length=4, null=False)
     value = models.CharField(max_length=250, null=False)
-    work = models.ForeignKey("Work", related_name="identifiers", null=False)
-    edition = models.ForeignKey("Edition", related_name="identifiers", null=True)
+    work = models.ForeignKey("Work", on_delete=models.CASCADE, related_name="identifiers", null=False)
+    edition = models.ForeignKey("Edition", on_delete=models.CASCADE, related_name="identifiers", null=True)
 
     class Meta:
         unique_together = ("type", "value")
@@ -108,10 +108,10 @@ class Identifier(models.Model):
 
     def __unicode__(self):
         return u'{0}:{1}'.format(self.type, self.value)
-
+        
     def label(self):
         return ID_CHOICES_MAP.get(self.type, self.type)
-
+        
     def url(self):
         return id_url(self.type, self.value)
 
@@ -122,14 +122,14 @@ class Work(models.Model):
     openlibrary_lookup = models.DateTimeField(null=True, blank=True)
     num_wishes = models.IntegerField(default=0, db_index=True)
     description = models.TextField(default='', null=True, blank=True)
-    selected_edition = models.ForeignKey("Edition", related_name='selected_works', null=True)
+    selected_edition = models.ForeignKey("Edition", on_delete=models.CASCADE, related_name='selected_works', null=True)
     # repurposed earliest_publication to actually be publication range
     publication_range = models.CharField(max_length=50, null=True, blank=True)
     featured = models.DateTimeField(null=True, blank=True, db_index=True,)
     is_free = models.BooleanField(default=False)
     landings = GenericRelation(Landing, related_query_name='works')
     related = models.ManyToManyField('self', symmetrical=False, blank=True, through='WorkRelation', related_name='reverse_related')
-    age_level = models.CharField(max_length=5, choices=AGE_LEVEL_CHOICES, default='', blank=True)
+    age_level = models.CharField(max_length=5, choices=AGE_LEVEL_CHOICES, default='', blank=True) 
 
     class Meta:
         ordering = ['title']
@@ -165,7 +165,7 @@ class Work(models.Model):
             for work_relation in self.works_related_from.all():
                 work_relation.delete()
         super(Work, self).delete(*args, **kwargs)  # Call the "real" save() method.
-
+        
     def id_for(self, type):
         return id_for(self, type)
 
@@ -233,7 +233,7 @@ class Work(models.Model):
     @property
     def openlibrary_url(self):
         return id_url('olwk', self.openlibrary_id)
-
+        
     def cover_filetype(self):
         if self.uses_google_cover():
             return 'jpeg'
@@ -431,14 +431,14 @@ class Work(models.Model):
 
     def pdffiles(self):
         return EbookFile.objects.filter(edition__work=self, format='pdf').exclude(file='').order_by('-created')
-
+    
     def versions(self):
         version_labels = []
         for ebook in self.ebooks_all():
             if ebook.version_label and not ebook.version_label in version_labels:
                 version_labels.append(ebook.version_label)
         return version_labels
-
+    
     def formats(self):
         fmts = []
         for fmt in ['pdf', 'epub', 'mobi', 'html']:
@@ -450,7 +450,7 @@ class Work(models.Model):
     def remove_old_ebooks(self):
         # this method is triggered after an file upload or new ebook saved
         old = Ebook.objects.filter(edition__work=self, active=True).order_by('-version_iter', '-created')
-
+        
         # keep highest version ebook for each format and version label
         done_format_versions = []
         for eb in old:
@@ -459,7 +459,7 @@ class Work(models.Model):
                 eb.deactivate()
             else:
                 done_format_versions.append(format_version)
-
+        
         # check for failed uploads.
         null_files = EbookFile.objects.filter(edition__work=self, file='')
         for ebf in null_files:
@@ -612,7 +612,7 @@ class Work(models.Model):
         return self.get_user_license(lib_user)
 
     def borrowable(self, user):
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         lib_license = self.get_lib_license(user)
         if lib_license and lib_license.borrowable:
@@ -620,7 +620,7 @@ class Work(models.Model):
         return False
 
     def lib_thanked(self, user):
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         lib_license = self.get_lib_license(user)
         if lib_license and lib_license.thanked:
@@ -628,7 +628,7 @@ class Work(models.Model):
         return False
 
     def in_library(self, user):
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         lib_license = self.get_lib_license(user)
         if lib_license and lib_license.acqs.count():
@@ -706,7 +706,7 @@ class Work(models.Model):
         if user is None:
             return None
         if hasattr(user, 'is_anonymous'):
-            if user.is_anonymous():
+            if user.is_anonymous:
                 return None
             return self.user_license(self.acqs.filter(user=user))
         else:
@@ -732,8 +732,8 @@ class Work(models.Model):
         return record_list
 
 class WorkRelation(models.Model):
-    to_work = models.ForeignKey('Work', related_name='works_related_to')
-    from_work= models.ForeignKey('Work', related_name='works_related_from')
+    to_work = models.ForeignKey('Work', on_delete=models.CASCADE, related_name='works_related_to')
+    from_work= models.ForeignKey('Work', on_delete=models.CASCADE, related_name='works_related_from')
     relation = models.CharField(max_length=15, choices=TEXT_RELATION_CHOICES)
 
 
@@ -766,9 +766,9 @@ class Relation(models.Model):
     name = models.CharField(max_length=30, blank=True,)
 
 class Relator(models.Model):
-    relation = models.ForeignKey('Relation', default=1) #first relation should have code='aut'
-    author = models.ForeignKey('Author')
-    edition = models.ForeignKey('Edition', related_name='relators')
+    relation = models.ForeignKey('Relation', on_delete=models.CASCADE, default=1) #first relation should have code='aut'
+    author = models.ForeignKey('Author', on_delete=models.CASCADE)
+    edition = models.ForeignKey('Edition', on_delete=models.CASCADE, related_name='relators')
     class Meta:
         db_table = 'core_author_editions'
 
@@ -796,12 +796,12 @@ class Subject(models.Model):
 
     class Meta:
         ordering = ['name']
-
+    
     @classmethod
     def set_by_name(cls, subject, work=None, authority=None):
         ''' use this method whenever you would be creating a new subject!'''
         subject = subject.strip()
-
+        
         # make sure it's not a ; delineated list
         subjects = subject.split(';')
         for additional_subject in subjects[1:]:
@@ -826,12 +826,12 @@ class Subject(models.Model):
             if not subject_obj.authority and authority:
                 subject_obj.authority = authority
                 subject_obj.save()
-
+        
             subject_obj.works.add(work)
-            return subject_obj
+            return subject_obj   
         else:
             return None
-
+    
     def __unicode__(self):
         return self.name
 
@@ -846,12 +846,12 @@ class Subject(models.Model):
 class Edition(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=1000)
-    publisher_name = models.ForeignKey("PublisherName", related_name="editions", null=True, blank=True)
+    publisher_name = models.ForeignKey("PublisherName", on_delete=models.CASCADE, related_name="editions", null=True, blank=True)
     publication_date = models.CharField(max_length=50, null=True, blank=True, db_index=True)
-    work = models.ForeignKey("Work", related_name="editions", null=True)
+    work = models.ForeignKey("Work", on_delete=models.CASCADE, related_name="editions", null=True)
     cover_image = models.URLField(null=True, blank=True)
     unglued = models.BooleanField(default=False)
-    note = models.ForeignKey("EditionNote", null=True, blank=True)
+    note = models.ForeignKey("EditionNote", on_delete=models.CASCADE, null=True, blank=True)
 
     def __unicode__(self):
         if self.isbn_13:
@@ -866,39 +866,47 @@ class Edition(models.Model):
     def cover_image_large(self):
         #550 pixel high image
         if self.cover_image:
-            im = get_thumbnail(self.cover_image, 'x550', crop='noop', quality=95)
-            if im.exists():
-                return im.url
+            try:
+                im = get_thumbnail(self.cover_image, 'x550', crop='noop', quality=95)
+                if im.exists():
+                    return im.url
+            except IOError:
+                pass
         elif self.googlebooks_id:
             url = "https://encrypted.google.com/books?id=%s&printsec=frontcover&img=1&zoom=0" % self.googlebooks_id
-            im = get_thumbnail(url, 'x550', crop='noop', quality=95)
-            if not im.exists() or im.storage.size(im.name) == 16392: # check for "image not available" image
-                url = "https://encrypted.google.com/books?id=%s&printsec=frontcover&img=1&zoom=1" % self.googlebooks_id
+            try:
                 im = get_thumbnail(url, 'x550', crop='noop', quality=95)
-            if im.exists():
-                return im.url
-            else:
-                return ''
-        else:
-            return ''
+                if not im.exists() or im.storage.size(im.name) == 16392: # check for "image not available" image
+                    url = "https://encrypted.google.com/books?id=%s&printsec=frontcover&img=1&zoom=1" % self.googlebooks_id
+                    im = get_thumbnail(url, 'x550', crop='noop', quality=95)
+                if im.exists():
+                    return im.url
+            except IOError:
+                pass
+        return ''
 
     def cover_image_small(self):
         #80 pixel high image
         if self.cover_image:
-            im = get_thumbnail(self.cover_image, 'x80', crop='noop', quality=95)
-            if im.exists():
-                return im.url
+            try:
+                im = get_thumbnail(self.cover_image, 'x80', crop='noop', quality=95)
+                if im.exists():
+                    return im.url
+            except IOError:
+                pass
         if self.googlebooks_id:
             return "https://encrypted.google.com/books?id=%s&printsec=frontcover&img=1&zoom=5" % self.googlebooks_id
-        else:
-            return ''
+        return ''
 
     def cover_image_thumbnail(self):
         #128 pixel wide image
         if self.cover_image:
-            im = get_thumbnail(self.cover_image, '128', crop='noop', quality=95)
-            if im.exists():
-                return im.url
+            try:
+                im = get_thumbnail(self.cover_image, '128', crop='noop', quality=95)
+                if im.exists():
+                    return im.url
+            except IOError:
+                pass
         if self.googlebooks_id:
             return "https://encrypted.google.com/books?id=%s&printsec=frontcover&img=1&zoom=1" % self.googlebooks_id
         else:
@@ -1026,7 +1034,7 @@ class EditionNote(models.Model):
 
 class Publisher(models.Model):
     created = models.DateTimeField(auto_now_add=True)
-    name = models.ForeignKey('PublisherName', related_name='key_publisher')
+    name = models.ForeignKey('PublisherName', on_delete=models.CASCADE, related_name='key_publisher')
     url = models.URLField(max_length=1024, null=True, blank=True)
     logo_url = models.URLField(max_length=1024, null=True, blank=True)
     description = models.TextField(default='', null=True, blank=True)
@@ -1037,7 +1045,7 @@ class Publisher(models.Model):
 class PublisherName(models.Model):
     name = models.CharField(max_length=255, blank=False, unique=True)
 
-    publisher = models.ForeignKey('Publisher', related_name='alternate_names', null=True)
+    publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE, related_name='alternate_names', null=True)
 
     def __unicode__(self):
         return self.name
@@ -1052,10 +1060,10 @@ class PublisherName(models.Model):
 
 
 class WasWork(models.Model):
-    work = models.ForeignKey('Work')
+    work = models.ForeignKey('Work', on_delete=models.CASCADE)
     was = models.IntegerField(unique=True)
     moved = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
 
 def safe_get_work(work_id):
     """
@@ -1079,10 +1087,10 @@ def path_for_file(instance, filename):
 class EbookFile(models.Model):
     file = models.FileField(upload_to=path_for_file)
     format = models.CharField(max_length=25, choices=settings.FORMATS)
-    edition = models.ForeignKey('Edition', related_name='ebook_files')
+    edition = models.ForeignKey('Edition', on_delete=models.CASCADE, related_name='ebook_files')
     created = models.DateTimeField(auto_now_add=True)
     asking = models.BooleanField(default=False)
-    ebook = models.ForeignKey('Ebook', related_name='ebook_files', null=True)
+    ebook = models.ForeignKey('Ebook', on_delete=models.CASCADE, related_name='ebook_files', null=True)
     source = models.URLField(null=True, blank=True)
     mobied = models.IntegerField(default=0) #-1 indicates a failed conversion attempt
     version = None
@@ -1115,6 +1123,7 @@ class EbookFile(models.Model):
             asking=self.asking,
             source=self.file.url
         )
+            
         new_mobi_ebf.file.save(path_for_file(new_mobi_ebf, None), mobi_cf)
         new_mobi_ebf.save()
         if self.ebook:
@@ -1148,8 +1157,8 @@ class Ebook(models.Model):
 
     # use 'PD-US', 'CC BY', 'CC BY-NC-SA', 'CC BY-NC-ND', 'CC BY-NC', 'CC BY-ND', 'CC BY-SA', 'CC0'
     rights = models.CharField(max_length=255, null=True, choices=cc.CHOICES, db_index=True)
-    edition = models.ForeignKey('Edition', related_name='ebooks')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+    edition = models.ForeignKey('Edition', on_delete=models.CASCADE, related_name='ebooks')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
 
     def kindle_sendable(self):
         if not self.filesize or self.filesize < send_to_kindle_limit:
@@ -1214,7 +1223,7 @@ class Ebook(models.Model):
             return '.{}'.format(self.version_iter)
         else:
             return '().{}'.format(self.version_label, self.version_iter)
-
+    
     def set_version(self, version):
         #set both version_label and version_iter with one string with format "version.iter"
         version_pattern = r'(.*)\.(\d+)$'
@@ -1224,11 +1233,11 @@ class Ebook(models.Model):
         else:
             self.version_label = version
         self.save()
-
+        
     def set_next_iter(self):
         # set the version iter to the next unused iter for that version
         for ebook in Ebook.objects.filter(
-                    edition=self.edition,
+                    edition=self.edition, 
                     version_label=self.version_label,
                     format=self.format,
                     provider=self.provider
@@ -1237,7 +1246,7 @@ class Ebook(models.Model):
              break
         self.version_iter = iter + 1
         self.save()
-
+          
     @property
     def rights_badge(self):
         if self.rights is None:

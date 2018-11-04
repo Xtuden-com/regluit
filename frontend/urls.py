@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.conf.urls import patterns, url, include
+from django.conf.urls import url, include
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
@@ -90,7 +90,6 @@ urlpatterns = [
     url(r"^work/(?P<work_id>\d+)/librarything/$", views.work_librarything, name="work_librarything"),
     url(r"^work/(?P<work_id>\d+)/goodreads/$", views.work_goodreads, name="work_goodreads"),
     url(r"^work/(?P<work_id>\d+)/openlibrary/$", views.work_openlibrary, name="work_openlibrary"),
-    url(r"^read/(?P<work_id>\d+)/$", views.read, name="read"),
     url(r"^new_edition/(?P<work_id>)(?P<edition_id>)$", views.edit_edition, name="new_edition"),
     url(r"^new_edition/(?P<work_id>\d*)/(?P<edition_id>\d*)$", views.edit_edition, name="new_edition"),
     url(r"^manage_ebooks/(?P<edition_id>\d*)$", views.manage_ebooks, name="manage_ebooks"),
@@ -118,6 +117,7 @@ urlpatterns = [
     url('^404testing/$', TemplateView.as_view(template_name='404.html') ),
     url('^500testing/$', TemplateView.as_view(template_name='500.html')),
     url('^robots.txt$', TemplateView.as_view(template_name='robots.txt',content_type='text/plain')),
+    url(r'favicon.ico$', views.static_redirect_view, {'file_name': 'favicon.ico', 'dir': 'images'}, name="favicon"),
     url(r"^emailshare/(?P<action>\w*)/?$", views.emailshare, name="emailshare"),
     url(r"^feedback/campaign/(?P<campaign_id>\d+)/?$", views.ask_rh, name="ask_rh"),
     url(r"^feedback/$", views.feedback, name="feedback"),

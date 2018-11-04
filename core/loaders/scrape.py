@@ -8,7 +8,12 @@ from django.conf import settings
 from urlparse import urljoin
 
 from regluit.core import models
-from regluit.core.validation import authlist_cleaner, identifier_cleaner, validate_date
+from regluit.core.validation import (
+    authlist_cleaner,
+    identifier_cleaner,
+    valid_subject,
+    validate_date,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +27,8 @@ class BaseScraper(object):
     '''
     can_scrape_hosts = False
     can_scrape_strings = False
+    parser_name = 'lxml'
+
     @classmethod
     def can_scrape(cls, url):
         ''' return True if the class can scrape the URL '''
@@ -39,37 +46,31 @@ class BaseScraper(object):
                     return True
         return False
 
+    @classmethod
+    def get_response(cls, url):
+        try:
+            return requests.get(url, headers={"User-Agent": settings.USER_AGENT})
+        except requests.exceptions.RequestException as e:
+            logger.error(e)
+
     def __init__(self, url):
         self.metadata = {}
         self.identifiers = {'http': url}
         self.doc = None
         self.base = url
-        try:
-            response = requests.get(url, headers={"User-Agent": settings.USER_AGENT})
+        response = type(self).get_response(url)
+        if response:
             if response.status_code == 200:
                 self.base = response.url
-                self.doc = BeautifulSoup(response.content, 'lxml')
+                self.doc = BeautifulSoup(response.content, self.parser_name)
                 for review in self.doc.find_all(itemtype="http://schema.org/Review"):
                     review.clear()
-                self.setup()
-                self.get_genre()
-                self.get_title()
-                self.get_language()
-                self.get_description()
-                self.get_identifiers()
-                self.get_keywords()
-                self.get_publisher()
-                self.get_pubdate()
-                self.get_authors()
-                self.get_cover()
-                self.get_downloads()
-                self.get_license()
+                self.get_all()
             if not self.metadata.get('title', None):
                 self.set('title', '!!! missing title !!!')
             if not self.metadata.get('language', None):
                 self.set('language', 'en')
-        except requests.exceptions.RequestException as e:
-            logger.error(e)
+        else:
             self.metadata = {}
         self.metadata['identifiers'] = self.identifiers
 
@@ -78,6 +79,8 @@ class BaseScraper(object):
     #
 
     def set(self, name, value):
+        if isinstance(value,(str, unicode)):
+            value= value.strip()
         self.metadata[name] = value
 
     def fetch_one_el_content(self, el_name):
@@ -122,7 +125,7 @@ class BaseScraper(object):
         ''' get the content of <dd> after a <dt> containing name'''
         dt = self.doc.find('dt', string=re.compile(name))
         dd = dt.find_next_sibling('dd') if dt else None
-        return dd.text if dd else None
+        return dd.text.strip() if dd and dd.text else None
 
     def get_itemprop(self, name, **attrs):
         value_list = []
@@ -140,6 +143,21 @@ class BaseScraper(object):
                 elif el.has_key('content'):
                     value_list.append(el['content'])
         return value_list
+                
+    def get_all(self):
+        self.setup()
+        self.get_genre()
+        self.get_title()
+        self.get_language()
+        self.get_description()
+        self.get_identifiers()
+        self.get_keywords()
+        self.get_publisher()
+        self.get_pubdate()
+        self.get_authors()
+        self.get_cover()
+        self.get_downloads()
+        self.get_license()
 
     def setup(self):
         # use this method to get auxiliary resources based on doc
@@ -241,7 +259,11 @@ class BaseScraper(object):
     def get_keywords(self):
         value = self.check_metas(['keywords']).strip(',;')
         if value:
-            self.set('subjects', re.split(' *[;,] *', value))
+            subjects = []
+            for subject in re.split(' *[;,] *', value):
+                if valid_subject(subject):
+                    subjects.append(subject)
+            self.set('subjects', subjects)
 
     def get_publisher(self):
         value = self.check_metas(['citation_publisher', r'DC\.Source'])
@@ -252,8 +274,8 @@ class BaseScraper(object):
         value = self.get_itemprop('datePublished', list_mode='one_item')
         if not value:
             value = self.check_metas([
-                'citation_publication_date', r'DC\.Date\.issued', 'datePublished',
-                'books:release_date', 'book:release_date'
+                'citation_publication_date', 'copyrightYear', r'DC\.Date\.issued', 'datePublished',
+                'books:release_date', 'book:release_date', 
             ])
         if value:
             value = validate_date(value)
